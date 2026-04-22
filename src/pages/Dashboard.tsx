@@ -329,11 +329,11 @@ function QuickPrint() {
           duplex: duplex,
           pages: pages,
           printer_name: printer?.name || 'Unknown Printer',
-          status: 'completed', 
+          status: 'pending', // Set to pending for secure release
         });
         
-        toast.success(`Job confirmed! ${pages} pages printed on ${printer?.name}`);
-        printAuditSlip(newJob, previewUrl);
+        toast.success(`Job Queued! Go to Print Release to collect your document.`);
+        // printAuditSlip(newJob, previewUrl); // Don't print immediately
         
         setOpen(false);
         setFile(null);
