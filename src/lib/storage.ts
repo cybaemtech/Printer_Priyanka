@@ -31,6 +31,7 @@ export interface PrintJob {
   cost: number;
   department: string;
   printer_name?: string;
+  printer_ip?: string;
 }
 
 export interface Printer {
@@ -46,6 +47,7 @@ export interface Printer {
   model?: string;
   totalPrints?: number;
   lastMaintenance?: string;
+  connectionType: 'usb' | 'wifi' | 'bluetooth';
 }
 
 export interface Policy {
@@ -76,14 +78,24 @@ export const storage = {
   // Printers
   getPrinters: () => getStoredData<Printer[]>('printers', [
     { 
-      id: 'p1', name: 'Main HP LaserJet', location: 'Floor 1', status: 'online', type: 'bw', 
-      tonerLevel: 85, paperLevel: 90, jobCount: 0, ip: '192.168.1.101', model: 'HP LaserJet Pro M404dn', 
-      totalPrints: 12450, lastMaintenance: '2026-02-15' 
+      id: 'p1', name: 'Canon LBP2900', location: 'Office Room 101', status: 'online', type: 'bw', 
+      tonerLevel: 85, paperLevel: 90, jobCount: 0, ip: '192.168.1.101', model: 'Canon LBP2900', 
+      totalPrints: 12450, lastMaintenance: '2026-02-15', connectionType: 'usb'
     },
     { 
-      id: 'p2', name: 'Marketing Color Canon', location: 'Floor 2', status: 'online', type: 'color', 
-      tonerLevel: 40, paperLevel: 60, jobCount: 0, ip: '192.168.1.102', model: 'Canon iR-ADV C3226i', 
-      totalPrints: 23100, lastMaintenance: '2026-03-01' 
+      id: 'p2', name: 'HP LaserJet Pro', location: 'Main Reception', status: 'online', type: 'bw', 
+      tonerLevel: 40, paperLevel: 60, jobCount: 0, ip: '192.168.1.102', model: 'HP M404dn', 
+      totalPrints: 23100, lastMaintenance: '2026-03-01', connectionType: 'wifi'
+    },
+    { 
+      id: 'p3', name: 'Canon Color iR-ADV', location: 'Marketing Dept', status: 'warning', type: 'color', 
+      tonerLevel: 15, paperLevel: 30, jobCount: 0, ip: '192.168.1.103', model: 'Canon iR-ADV C3525i', 
+      totalPrints: 45200, lastMaintenance: '2026-01-20', connectionType: 'wifi'
+    },
+    { 
+      id: 'p4', name: 'Mobile Mini Printer', location: 'Field Staff', status: 'online', type: 'bw', 
+      tonerLevel: 90, paperLevel: 10, jobCount: 0, ip: 'N/A', model: 'Phomemo M02', 
+      totalPrints: 150, lastMaintenance: '2026-04-01', connectionType: 'bluetooth'
     },
   ]),
   setPrinters: (printers: Printer[]) => setStoredData('printers', printers),
@@ -102,6 +114,9 @@ export const storage = {
     const users = storage.getUsers();
     const user = users.find(u => u.id === jobData.user_id);
     
+    const printers = storage.getPrinters();
+    const printer = printers.find(p => p.name === jobData.printer_name);
+    
     const newJob: PrintJob = {
       id: uuidv4(),
       user_id: jobData.user_id || 'u1',
@@ -115,6 +130,7 @@ export const storage = {
       status: 'pending',
       submitted_at: new Date().toISOString(),
       cost: (jobData.pages || 1) * (jobData.color_mode === 'color' ? 0.50 : 0.10),
+      printer_ip: printer?.ip || 'Local',
       ...jobData
     } as PrintJob;
     

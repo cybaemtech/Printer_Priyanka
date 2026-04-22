@@ -106,7 +106,10 @@ export default function PrintJobs() {
                   </TableCell>
                 )}
                 {role === "admin" && <TableCell className="text-xs py-1.5 text-muted-foreground">{job.department || 'N/A'}</TableCell>}
-                <TableCell className="text-xs py-1.5">{job.printer_name || job.printerName || 'System Printer'}</TableCell>
+                <TableCell className="text-xs py-1.5">
+                  <div className="font-medium">{job.printer_name || job.printerName || 'System Printer'}</div>
+                  <div className="text-[10px] text-muted-foreground font-mono">{job.printer_ip || 'N/A'}</div>
+                </TableCell>
                 <TableCell className="text-xs py-1.5">{job.pages} × {job.copies || 1}</TableCell>
                 <TableCell className="text-xs py-1.5">
                   <Badge variant="outline" className="text-2xs">{(job.color_mode || job.colorMode) === "color" ? "Color" : "B&W"}</Badge>

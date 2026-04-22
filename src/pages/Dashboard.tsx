@@ -220,9 +220,9 @@ function QuickPrint() {
 
   const printers = storage.getPrinters().map(p => ({
     ...p,
-    icon: p.type === 'color' ? Wifi : Usb, // Map based on type or just default
+    icon: p.connectionType === 'wifi' ? Wifi : p.connectionType === 'bluetooth' ? Bluetooth : Usb,
     color: p.status === 'online' ? 'text-success' : 'text-muted-foreground',
-    typeDisplay: p.type === 'color' ? 'Color Network' : 'B&W USB'
+    typeDisplay: p.connectionType === 'usb' ? 'USB Port' : p.connectionType === 'wifi' ? 'WiFi Network' : 'Bluetooth'
   }));
 
   const handleStartScan = () => {
