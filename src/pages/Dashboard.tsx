@@ -218,11 +218,12 @@ function QuickPrint() {
   const [step, setStep] = useState(1);
   const [pages, setPages] = useState(1);
 
-  const printers = [
-    { id: 'usb-1', name: 'HP DeskJet (USB)', type: 'usb', icon: Usb, color: 'text-blue-500' },
-    { id: 'wifi-1', name: 'Office Printer (WiFi)', type: 'wifi', icon: Wifi, color: 'text-success' },
-    { id: 'bt-1', name: 'Portable Printer (BT)', type: 'bluetooth', icon: Bluetooth, color: 'text-primary' },
-  ];
+  const printers = storage.getPrinters().map(p => ({
+    ...p,
+    icon: p.type === 'color' ? Wifi : Usb, // Map based on type or just default
+    color: p.status === 'online' ? 'text-success' : 'text-muted-foreground',
+    typeDisplay: p.type === 'color' ? 'Color Network' : 'B&W USB'
+  }));
 
   const handleStartScan = () => {
     setScanning(true);
@@ -265,16 +266,37 @@ function QuickPrint() {
             .document-container { 
               padding: 0; 
               width: 100%; 
+              height: 100%;
               display: flex; 
               flex-direction: column;
               align-items: center;
+              justify-content: center;
             }
-            img { max-width: 100%; height: auto; display: block; }
-            embed { width: 100%; border: none; }
+            img { 
+              max-width: 100%; 
+              max-height: 100vh; 
+              height: auto; 
+              width: auto;
+              display: block; 
+              object-fit: contain;
+            }
+            embed { 
+              width: 100%; 
+              height: 100vh; 
+              border: none; 
+            }
             @media print { 
-              .document-container { margin: 0; width: 100%; }
-              body { margin: 0; }
-              @page { margin: 0; }
+              .document-container { margin: 0; width: 100%; height: 100vh; overflow: hidden; }
+              body { margin: 0; overflow: hidden; }
+              img, embed { 
+                max-width: 100%; 
+                max-height: 100%; 
+                page-break-inside: avoid; 
+              }
+              @page { 
+                margin: 0; 
+                size: auto; 
+              }
             }
           </style>
         </head>
@@ -478,7 +500,7 @@ function QuickPrint() {
                         </div>
                         <div>
                           <div className="text-sm font-semibold">{p.name}</div>
-                          <div className="text-[10px] text-muted-foreground uppercase">{p.type} Ready</div>
+                          <div className="text-[10px] text-muted-foreground uppercase">{p.typeDisplay} Ready</div>
                         </div>
                       </div>
                       {selectedPrinter === p.id && <CheckCircle2 className="h-4 w-4 text-primary" />}
