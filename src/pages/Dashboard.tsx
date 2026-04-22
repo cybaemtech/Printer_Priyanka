@@ -259,41 +259,33 @@ function QuickPrint() {
     const html = `
       <html>
         <head>
-          <title>${job.document_name} - Audited Print</title>
+          <title>${job.document_name} - Print</title>
           <style>
             body { margin: 0; padding: 0; font-family: sans-serif; background: #fff; }
-            .audit-header { 
-              padding: 4px 15px; 
-              background: #fafafa; 
-              border-bottom: 1px solid #eee; 
-              font-size: 9px; 
-              color: #888;
-              display: flex;
-              justify-content: space-between;
-              font-family: monospace;
+            .document-container { 
+              padding: 0; 
+              width: 100%; 
+              display: flex; 
+              flex-direction: column;
+              align-items: center;
             }
-            .document-container { padding: 0; width: 100%; }
+            img { max-width: 100%; height: auto; display: block; }
+            embed { width: 100%; border: none; }
             @media print { 
-              .audit-header { background: transparent; border-bottom: 0.5pt solid #eee; }
+              .document-container { margin: 0; width: 100%; }
               body { margin: 0; }
+              @page { margin: 0; }
             }
           </style>
         </head>
         <body>
-          <div class="audit-header">
-            <span>AUDIT_LOG: ${job.id}</span>
-            <span>USER_ID: ${job.user_id}</span>
-            <span>DATE: ${new Date(job.submitted_at).toLocaleString()}</span>
-          </div>
-          
           ${url ? `
             <div class="document-container">
               ${isImage ? `<img src="${url}" style="width: 100%; display: block;" />` : 
                 isPdf ? `<embed src="${url}" type="application/pdf" width="100%" height="1100px" />` :
                 `<div style="padding: 50px; text-align: center; border: 1px solid #eee; margin: 20px;">
                   <h1 style="font-size: 1.5em; color: #333;">${job.document_name}</h1>
-                  <p style="color: #666;">This document has been audited for printing.</p>
-                  <p style="font-size: 0.8em; color: #999;">Employee: ${job.userName} (${job.user_id})</p>
+                  <p style="color: #666;">Document ready for printing.</p>
                 </div>`
               }
             </div>

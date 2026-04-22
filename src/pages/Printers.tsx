@@ -131,9 +131,26 @@ export default function Printers() {
                 <span className="text-2xs text-muted-foreground">Last Maintenance</span>
                 <div className="font-medium">{selected.lastMaintenance}</div>
               </div>
-              <div className="border-t pt-1">
-                <span className="text-2xs text-muted-foreground">Active Jobs</span>
-                <div className="font-medium">{selected.jobCount}</div>
+              <div className="border-t pt-3">
+                <span className="text-2xs font-semibold text-primary uppercase tracking-wider">Recent Printer Logs</span>
+                <div className="mt-2 space-y-2 max-h-[200px] overflow-y-auto pr-1">
+                  {storage.getJobs()
+                    .filter(j => j.printer_name === selected.name)
+                    .slice(0, 5)
+                    .map(job => (
+                      <div key={job.id} className="p-2 bg-muted/30 rounded border border-border/50 text-[10px]">
+                        <div className="font-medium truncate">{job.document_name}</div>
+                        <div className="flex justify-between text-muted-foreground mt-1">
+                          <span>User: {job.user_id}</span>
+                          <span>{new Date(job.submitted_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    ))
+                  }
+                  {storage.getJobs().filter(j => j.printer_name === selected.name).length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground italic">No jobs recorded yet</div>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
