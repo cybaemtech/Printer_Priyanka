@@ -6,7 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { storage } from "@/lib/storage";
 import type { Printer } from "@/lib/storage";
-import { Search, MapPin } from "lucide-react";
+import { Search, MapPin, RefreshCw, Loader2 } from "lucide-react";
+import { useEffect } from "react";
 
 type PrinterStatus = 'online' | 'offline' | 'warning' | 'error';
 
@@ -27,7 +28,26 @@ const statusBadge: Record<PrinterStatus, string> = {
 export default function Printers() {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<Printer | null>(null);
-  const printers = storage.getPrinters();
+  const [printers, setPrinters] = useState<Printer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchPrinters = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/printers');
+        if (!response.ok) throw new Error('API Error');
+        const data = await response.json();
+        setPrinters(data);
+        storage.setPrinters(data); // Overwrite stale mock data
+      } catch (error) {
+        console.error('Failed to fetch real printers:', error);
+        setPrinters(storage.getPrinters()); // Fallback
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPrinters();
+  }, []);
 
   const filtered = printers.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -52,53 +72,68 @@ export default function Printers() {
             <Input placeholder="Search printers..." value={search} onChange={e => setSearch(e.target.value)} className="h-8 pl-7 text-xs" />
           </div>
 
-          <Card className="shadow-none">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-2xs h-8 w-8"></TableHead>
-                  <TableHead className="text-2xs h-8">Name</TableHead>
-                  <TableHead className="text-2xs h-8">Location</TableHead>
-                  <TableHead className="text-2xs h-8">Type</TableHead>
-                  <TableHead className="text-2xs h-8">IP Address</TableHead>
-                  <TableHead className="text-2xs h-8">Jobs</TableHead>
-                  <TableHead className="text-2xs h-8">Toner</TableHead>
-                  <TableHead className="text-2xs h-8">Paper</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.map(p => (
-                  <TableRow
-                    key={p.id}
-                    className={`cursor-pointer ${selected?.id === p.id ? "bg-accent" : ""}`}
-                    onClick={() => setSelected(p)}
-                  >
-                    <TableCell className="py-1.5 px-2">
-                      <span className={`h-2 w-2 rounded-full inline-block ${statusColors[p.status]}`} />
-                    </TableCell>
-                    <TableCell className="text-xs py-1.5 font-medium">{p.name}</TableCell>
-                    <TableCell className="text-xs py-1.5 text-muted-foreground">{p.location}</TableCell>
-                    <TableCell className="text-xs py-1.5">
-                      <Badge variant="outline" className="text-2xs">{p.type === "color" ? "Color" : "B&W"}</Badge>
-                    </TableCell>
-                    <TableCell className="text-xs py-1.5 font-mono text-muted-foreground">{p.ip}</TableCell>
-                    <TableCell className="text-xs py-1.5">{p.jobCount}</TableCell>
-                    <TableCell className="text-xs py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <Progress value={p.tonerLevel} className="h-1.5 w-12" />
-                        <span className="text-2xs text-muted-foreground">{p.tonerLevel}%</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <Progress value={p.paperLevel} className="h-1.5 w-12" />
-                        <span className="text-2xs text-muted-foreground">{p.paperLevel}%</span>
-                      </div>
-                    </TableCell>
+          <Card className="shadow-none min-h-[300px]">
+            {loading ? (
+              <div className="py-20 flex flex-col items-center justify-center space-y-3">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-xs text-muted-foreground animate-pulse">Scanning system for hardware...</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-2xs h-8 w-8"></TableHead>
+                    <TableHead className="text-2xs h-8">Name</TableHead>
+                    <TableHead className="text-2xs h-8">Location</TableHead>
+                    <TableHead className="text-2xs h-8">Type</TableHead>
+                    <TableHead className="text-2xs h-8">IP Address</TableHead>
+                    <TableHead className="text-2xs h-8">Jobs</TableHead>
+                    <TableHead className="text-2xs h-8">Toner</TableHead>
+                    <TableHead className="text-2xs h-8">Paper</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filtered.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="py-20 text-center text-muted-foreground italic text-xs">
+                        No printers connected. Please connect a USB or Network printer.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filtered.map(p => (
+                      <TableRow
+                        key={p.id}
+                        className={`cursor-pointer ${selected?.id === p.id ? "bg-accent" : ""}`}
+                        onClick={() => setSelected(p)}
+                      >
+                        <TableCell className="py-1.5 px-2">
+                          <span className={`h-2 w-2 rounded-full inline-block ${statusColors[p.status]}`} />
+                        </TableCell>
+                        <TableCell className="text-xs py-1.5 font-medium">{p.name}</TableCell>
+                        <TableCell className="text-xs py-1.5 text-muted-foreground">{p.location}</TableCell>
+                        <TableCell className="text-xs py-1.5">
+                          <Badge variant="outline" className="text-2xs">{p.type === "color" ? "Color" : "B&W"}</Badge>
+                        </TableCell>
+                        <TableCell className="text-xs py-1.5 font-mono text-muted-foreground">{p.ip}</TableCell>
+                        <TableCell className="text-xs py-1.5">{p.jobCount}</TableCell>
+                        <TableCell className="text-xs py-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <Progress value={p.tonerLevel} className="h-1.5 w-12" />
+                            <span className="text-2xs text-muted-foreground">{p.tonerLevel}%</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs py-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <Progress value={p.paperLevel} className="h-1.5 w-12" />
+                            <span className="text-2xs text-muted-foreground">{p.paperLevel}%</span>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            )}
           </Card>
         </div>
 

@@ -218,19 +218,29 @@ function QuickPrint() {
   const [step, setStep] = useState(1);
   const [pages, setPages] = useState(1);
 
-  const printers = storage.getPrinters().map(p => ({
-    ...p,
-    icon: p.connectionType === 'wifi' ? Wifi : p.connectionType === 'bluetooth' ? Bluetooth : Usb,
-    color: p.status === 'online' ? 'text-success' : 'text-muted-foreground',
-    typeDisplay: p.connectionType === 'usb' ? 'USB Port' : p.connectionType === 'wifi' ? 'WiFi Network' : 'Bluetooth'
-  }));
+  const [printers, setPrinters] = useState<any[]>([]);
 
-  const handleStartScan = () => {
+  const handleStartScan = async () => {
     setScanning(true);
     setStep(2);
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://localhost:3001/api/printers');
+      if (!response.ok) throw new Error('API Error');
+      const data = await response.json();
+      const mapped = data.map((p: any) => ({
+        ...p,
+        icon: p.type === 'color' ? Wifi : Usb,
+        color: 'text-success',
+        typeDisplay: p.type === 'color' ? 'Color Network' : 'B&W USB'
+      }));
+      setPrinters(mapped);
+      storage.setPrinters(mapped); 
+    } catch (error) {
+      console.error('Failed to fetch real printers:', error);
+      setPrinters([]);
+    } finally {
       setScanning(false);
-    }, 2000);
+    }
   };
 
   const countPdfPages = (file: File): Promise<number> => {
@@ -328,7 +338,29 @@ function QuickPrint() {
   };
 
   const handleUpload = () => {
-    if (!file || !selectedPrinter) return;
+    if (!file || !selectedPrinter) {
+      toast.error("No printer selected or file missing", {
+        description: "Please ensure a printer is connected and a file is uploaded."
+      });
+      return;
+    }
+
+    // Double check if printer still exists in current list
+    const printerExists = printers.find(p => p.id === selectedPrinter);
+    if (!printerExists && printers.length > 0) {
+      toast.error("Printer connection lost", {
+        description: "The selected printer is no longer detected. Please re-scan."
+      });
+      return;
+    }
+
+    if (printers.length === 0) {
+      toast.error("NOT CONNECTED!!", {
+        description: "No USB, WiFi, or Bluetooth printers detected. Please connect a device."
+      });
+      return;
+    }
+
     setLoading(true);
     
     // Simulate "Communicating with Printer Auditor..."
@@ -487,26 +519,37 @@ function QuickPrint() {
                   <div className="text-[10px] text-muted-foreground">{(file?.size ? (file.size / 1024).toFixed(1) : 0)} KB</div>
                 </div>
                 <div className="text-xs font-medium text-muted-foreground mb-1">Discovered Devices</div>
-                <div className="grid gap-2">
-                  {printers.map(p => (
-                    <div 
-                      key={p.id}
-                      onClick={() => setSelectedPrinter(p.id)}
-                      className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedPrinter === p.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:border-primary/30'}`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-md bg-background border ${p.color}`}>
-                          <p.icon className="h-4 w-4" />
+                {printers.length === 0 ? (
+                  <div className="py-12 text-center border-2 border-dashed rounded-lg bg-destructive/5 border-destructive/20">
+                    <AlertTriangle className="h-10 w-10 text-destructive mx-auto mb-2 animate-bounce" />
+                    <div className="text-lg font-black text-destructive tracking-tighter">NOT CONNECTED!!</div>
+                    <p className="text-xs text-muted-foreground mt-1">No physical printers detected on this system.</p>
+                    <Button variant="outline" size="sm" className="mt-4 h-8 text-xs" onClick={handleStartScan}>
+                      <RefreshCw className="h-3 w-3 mr-2" /> Retry Hardware Scan
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="grid gap-2">
+                    {printers.map(p => (
+                      <div 
+                        key={p.id}
+                        onClick={() => setSelectedPrinter(p.id)}
+                        className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all ${selectedPrinter === p.id ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'hover:border-primary/30'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`p-2 rounded-md bg-background border ${p.color}`}>
+                            <p.icon className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold">{p.name}</div>
+                            <div className="text-[10px] text-muted-foreground uppercase">{p.typeDisplay} Ready</div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-sm font-semibold">{p.name}</div>
-                          <div className="text-[10px] text-muted-foreground uppercase">{p.typeDisplay} Ready</div>
-                        </div>
+                        {selectedPrinter === p.id && <CheckCircle2 className="h-4 w-4 text-primary" />}
                       </div>
-                      {selectedPrinter === p.id && <CheckCircle2 className="h-4 w-4 text-primary" />}
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
                 <div className="flex gap-2 pt-2">
                   <Button variant="outline" className="flex-1" onClick={() => setStep(1)}>Back</Button>
                   <Button className="flex-1" disabled={!selectedPrinter || loading} onClick={handleUpload}>
