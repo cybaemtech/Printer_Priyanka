@@ -119,6 +119,23 @@ export const storage = {
     } as PrintJob;
     
     setStoredData('print_jobs', [newJob, ...jobs]);
+
+    // Update printer stats if job is completed
+    if (newJob.status === 'completed' && newJob.printer_name) {
+      const printers = storage.getPrinters();
+      const updatedPrinters = printers.map(p => {
+        if (p.name === newJob.printer_name) {
+          return {
+            ...p,
+            jobCount: (p.jobCount || 0) + 1,
+            totalPrints: (p.totalPrints || 0) + newJob.pages,
+          };
+        }
+        return p;
+      });
+      storage.setPrinters(updatedPrinters);
+    }
+
     return newJob;
   },
 
