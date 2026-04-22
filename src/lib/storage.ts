@@ -230,3 +230,17 @@ if (storage.getUsers().length === 0) {
     },
   ]);
 }
+
+// Auto-seed initial jobs if none exist
+if (storage.getJobs().length === 0) {
+  storage.addJob({
+    user_id: 'u2', // Mapping EMP002 to the seeded user u2
+    userName: 'John Doe',
+    document_name: 'Report.pdf',
+    submitted_at: '2026-04-22T11:00:00Z',
+    printer_name: 'Canon LBP2900',
+    pages: 5,
+    status: 'completed',
+    cost: 0.50
+  });
+}

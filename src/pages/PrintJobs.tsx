@@ -79,6 +79,7 @@ export default function PrintJobs() {
             <TableRow>
               <TableHead className="text-2xs h-8">Document</TableHead>
               {role === "admin" && <TableHead className="text-2xs h-8">User</TableHead>}
+              {role === "admin" && <TableHead className="text-2xs h-8">User ID</TableHead>}
               {role === "admin" && <TableHead className="text-2xs h-8">Department</TableHead>}
               <TableHead className="text-2xs h-8">Printer</TableHead>
               <TableHead className="text-2xs h-8">Pages</TableHead>
@@ -94,7 +95,16 @@ export default function PrintJobs() {
             {jobs.map(job => (
               <TableRow key={job.id}>
                 <TableCell className="text-xs py-1.5 font-medium max-w-[180px] truncate">{job.document_name || job.documentName}</TableCell>
-                {role === "admin" && <TableCell className="text-xs py-1.5">{job.userName || 'User'}</TableCell>}
+                {role === "admin" && (
+                  <TableCell className="text-xs py-1.5 font-medium">
+                    {job.userName || 'User'}
+                  </TableCell>
+                )}
+                {role === "admin" && (
+                  <TableCell className="text-xs py-1.5 font-mono text-muted-foreground">
+                    {job.user_id}
+                  </TableCell>
+                )}
                 {role === "admin" && <TableCell className="text-xs py-1.5 text-muted-foreground">{job.department || 'N/A'}</TableCell>}
                 <TableCell className="text-xs py-1.5">{job.printer_name || job.printerName || 'System Printer'}</TableCell>
                 <TableCell className="text-xs py-1.5">{job.pages} × {job.copies || 1}</TableCell>
